@@ -1,4 +1,4 @@
-val navSdkVersion by extra("6.0.0")
+val navSdkVersion by extra("7.2.0")
 
 plugins {
     alias(libs.plugins.android.application)
@@ -30,11 +30,12 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+        isCoreLibraryDesugaringEnabled = true
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "1.8"
     }
 }
 
@@ -48,6 +49,7 @@ dependencies {
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    coreLibraryDesugaring(libs.android.desugar.jdk.libs)
 
     implementation("com.google.android.libraries.navigation:navigation:${navSdkVersion}")
 }
