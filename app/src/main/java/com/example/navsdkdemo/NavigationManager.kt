@@ -3,28 +3,25 @@ package com.example.navsdkdemo
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
-import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.navigation.CustomRoutesOptions
+import com.google.android.libraries.navigation.DisplayOptions
+import com.google.android.libraries.navigation.ListenableResultFuture
 import com.google.android.libraries.navigation.Navigator
 import com.google.android.libraries.navigation.RoutingOptions
 import com.google.android.libraries.navigation.SimulationOptions
 import com.google.android.libraries.navigation.Waypoint
 import com.google.android.libraries.navigation.Waypoint.UnsupportedPlaceIdException
-import com.google.android.libraries.navigation.DisplayOptions
-import com.google.android.libraries.navigation.ListenableResultFuture
-
 
 /**
  * Manages interactions with the Navigation SDK.
- * @param context The application context.
- * @param navigator The Navigator instance for controlling navigation.
+ * Handles: Route calculation, Guidance start, and Cleanup.
  */
-
 class NavigationManager(
     private val context: Context,
     private val navigator: Navigator
 ) {
 
+    // --- Listeners ---
     private val arrivalListener = Navigator.ArrivalListener { arrivalEvent ->
         showToast("onArrival: User has arrived")
         if (arrivalEvent.isFinalDestination) {
@@ -55,15 +52,14 @@ class NavigationManager(
      */
     fun startSingleDestinationNavigation(
         destination: Waypoint,
-        routingOptions: RoutingOptions,
-        displayOptions: DisplayOptions
+        routingOptions: RoutingOptions? = null,
+        displayOptions: DisplayOptions? = null
     ) {
         val pendingRoute = navigator.setDestination(
             destination,
             routingOptions,
             displayOptions
         )
-
         handlePendingRouteResult(pendingRoute)
     }
 
@@ -72,15 +68,19 @@ class NavigationManager(
      */
     fun startMultiWaypointNavigation(
         destinations: List<Waypoint>,
-        routingOptions: RoutingOptions ? = null,
-        displayOptions: DisplayOptions ? = null,
+        routingOptions: RoutingOptions? = null,
+        displayOptions: DisplayOptions? = null,
     ) {
+        if (destinations.isEmpty()) {
+            showToast("No destinations provided")
+            return
+        }
+
         val pendingRoute = navigator.setDestinations(
             destinations,
             routingOptions,
             displayOptions
         )
-
         handlePendingRouteResult(pendingRoute)
     }
 
@@ -88,33 +88,27 @@ class NavigationManager(
      * Scenario 3: Starts navigation using a pre-planned route token.
      */
     fun startTokenNavigation(
-        mWaypoints: MutableList<Waypoint>,
+        waypoints: List<Waypoint>,
         customRoutesOptions: CustomRoutesOptions,
-        displayOptions: DisplayOptions
+        displayOptions: DisplayOptions? = null
     ) {
-        // Uses the four-argument overload of setDestinations, which is required
-        // to pass the CustomRoutesOptions (the route token).
         val pendingRoute = navigator.setDestinations(
-            mWaypoints,
+            waypoints,
             customRoutesOptions,
             displayOptions
         )
-
         handlePendingRouteResult(pendingRoute)
     }
 
     // --- Utility Functions ---
 
-    /**
-     * Handles the asynchronous result of setting a route and starts guidance on success.
-     */
     private fun handlePendingRouteResult(pendingRoute: ListenableResultFuture<Navigator.RouteStatus>) {
         pendingRoute.setOnResultListener { code ->
             when (code) {
                 Navigator.RouteStatus.OK -> {
                     navigator.setAudioGuidance(Navigator.AudioGuidance.VOICE_ALERTS_AND_GUIDANCE)
                     navigator.simulator.simulateLocationsAlongExistingRoute(
-                        SimulationOptions().speedMultiplier(5f)
+                        SimulationOptions().speedMultiplier(1f)
                     )
                     navigator.startGuidance()
                 }
@@ -127,9 +121,30 @@ class NavigationManager(
     }
 
     /**
-     * Cleans up resources and removes listeners to prevent memory leaks.
+     * HELPER: Creates a Waypoint safely and adds it to the list.
+     * Handles the UnsupportedPlaceIdException so the Activity doesn't have to.
+     */
+    fun createWaypoint(listToAddTo: MutableList<Waypoint>, placeId: String, title: String?) {
+        try {
+            val wp = Waypoint.builder()
+                .setPlaceIdString(placeId)
+                .setTitle(title)
+                .build()
+
+            listToAddTo.add(wp)
+
+        } catch (e: UnsupportedPlaceIdException) {
+            Log.e("NavManager", "Invalid Place ID: $placeId", e)
+            showToast("Error: Place ID $placeId is not supported")
+        }
+    }
+
+    /**
+     * Cleans up resources to prevent memory leaks.
      */
     fun cleanup() {
+        navigator.stopGuidance()
+        navigator.clearDestinations()
         navigator.removeArrivalListener(arrivalListener)
         navigator.removeRouteChangedListener(routeChangedListener)
         navigator.simulator.unsetUserLocation()
@@ -146,25 +161,7 @@ class NavigationManager(
             Navigator.RouteStatus.NETWORK_ERROR -> "Network Error"
             Navigator.RouteStatus.QUOTA_CHECK_FAILED -> "Quota Exceeded"
             Navigator.RouteStatus.LOCATION_DISABLED -> "Location Disabled"
-            Navigator.RouteStatus.LOCATION_UNKNOWN -> "Location Unknown"
-            Navigator.RouteStatus.WAYPOINT_ERROR -> "Waypoint Error"
-
             else -> "Unknown Error ($code)"
-        }
-    }
-
-    fun createWaypoint(mWaypoints: MutableList<Waypoint>, placeId: String, title: String?) {
-        try {
-            mWaypoints.add(
-                Waypoint.builder()
-                    .setPlaceIdString(placeId)
-                    .setTitle(title)
-                    .build()
-            )
-
-        } catch (e: UnsupportedPlaceIdException) {
-            Log.e("NavigationManager", "Failed to create waypoint for PlaceID: $placeId", e)
-            showToast("Unsupported PlaceID: $placeId")
         }
     }
 }

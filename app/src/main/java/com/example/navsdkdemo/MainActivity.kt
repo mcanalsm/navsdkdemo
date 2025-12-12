@@ -7,7 +7,10 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.os.Looper
+import android.view.View
 import android.view.WindowManager
+import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,39 +20,46 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.model.LatLng
-import com.google.android.libraries.navigation.CustomRoutesOptions
+import com.google.android.libraries.navigation.AlternateRoutesStrategy
+import com.google.android.libraries.navigation.CustomControlPosition
+import com.google.android.libraries.navigation.DirectionsListView
 import com.google.android.libraries.navigation.DisplayOptions
+import com.google.android.libraries.navigation.ForceNightMode.FORCE_DAY
 import com.google.android.libraries.navigation.NavigationApi
 import com.google.android.libraries.navigation.NavigationView
 import com.google.android.libraries.navigation.Navigator
-import com.google.android.libraries.navigation.RouteCalloutInfoFormat
 import com.google.android.libraries.navigation.RoutingOptions
+import com.google.android.libraries.navigation.StylingOptions
 import com.google.android.libraries.navigation.Waypoint
-import com.google.android.libraries.navigation.Waypoint.UnsupportedPlaceIdException
 import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
 
+    private var mNavigator: Navigator? = null
+
+    // Reference to the Navigation View
     private lateinit var navView: NavigationView
+
+    // Reference to our helper Manager
     private var navigationManager: NavigationManager? = null
 
-    private val mWaypoints = mutableListOf<Waypoint>()
+    // UI Elements
+    private var mDirectionsListView: DirectionsListView? = null
 
-    companion object {
-        val DESTINATION_LATLNG = LatLng(41.38871, 2.13872)
-        val DESTINATION_PLACEID = "ChIJw2Q7CVSvEmsR3sf73C6Qtw0"
-        val startLocation = LatLng(41.38690, 2.13961)
-        val routeToken =
-            "CskCCtwBMtkBGr0BCjcCFhJviiokrs4FrQTCBBtmjpEH4ZEHysMCDLu4mgS1nJwE7LxMl4ZRsqJQg7QKnaogqLkBnmUAEkSKs01ozcowdA340nrBXCM_2Nd1Rq6Zd5aeWFe-kkpWwo6_kdriksXjwlS9-P7RHqx_BFDuIfWn8SrT4la4z0jfkgV3YRoSAAECAm4DBgjAAQkAKAMVDAIEKhEdAg0PCgsNEBBoBHQAFRoRDDIBAj35M6M-RVHrAT9I1ZDR76nz2OFlIhc1UElkYVliVkNaR0FpdllQcWMtbTBRRRAFGk8KTQoYCg0KAggBEQAAAAAAgGZAEXNoke18opBAEhIIABADEAYQExASGAJCBBoCCAUiGwoXNVBJZGFkV1pDWkdBaXZZUHFjLW0wUUVwASgBIhUA7gqEs75uqdtSKAd7NmQcDUngTIg"
-    }
+    // Global options so we can pass them to the Manager
+    private var mDisplayOptions: DisplayOptions? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_main)
+
         navView = findViewById(R.id.navigation_view)
         navView.onCreate(savedInstanceState)
-        navView.setCalloutInfoFormatOverride(RouteCalloutInfoFormat.TIME)
+
+        // --- For custom UI navigation settings ---
+        setupNavigationUiSettings()
+
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.navigation_view)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -60,10 +70,7 @@ class MainActivity : AppCompatActivity() {
         /** ---------- Ask for the permissions ----------- **/
         val permissions =
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                arrayOf(
-                    Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.POST_NOTIFICATIONS
-                )
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.POST_NOTIFICATIONS)
             } else {
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
             }
@@ -77,11 +84,7 @@ class MainActivity : AppCompatActivity() {
                 registerForActivityResult(
                     ActivityResultContracts.RequestMultiplePermissions(),
                 ) { permissionResults ->
-                    if (permissionResults.getOrDefault(
-                            Manifest.permission.ACCESS_FINE_LOCATION,
-                            false
-                        )
-                    ) {
+                    if (permissionResults.getOrDefault(Manifest.permission.ACCESS_FINE_LOCATION, false)) {
                         onLocationPermissionGranted()
                     } else {
                         finish()
@@ -89,16 +92,125 @@ class MainActivity : AppCompatActivity() {
                 }
             permissionsLauncher.launch(permissions)
         } else {
-            android.os.Handler(Looper.getMainLooper())
-                .postDelayed({ onLocationPermissionGranted() }, TimeUnit.SECONDS.toMillis(2))
+            android.os.Handler(Looper.getMainLooper()).postDelayed({ onLocationPermissionGranted() }, TimeUnit.SECONDS.toMillis(2))
         }
     }
 
+    private fun setupNavigationUiSettings() {
+
+        // --- Night Mode Settings ---
+        navView.setForceNightMode(FORCE_DAY)
+
+        // --- Styling (Commented out for Playground usage) ---
+        /*
+        val myStyle = StylingOptions().apply {
+            primaryDayModeThemeColor(0xff1A73E8.toInt())
+            secondaryDayModeThemeColor(0xff1557B0.toInt())
+            primaryNightModeThemeColor(0xff202124.toInt())
+            secondaryNightModeThemeColor(0xff303134.toInt())
+            headerLargeManeuverIconColor(0xffFFFFFF.toInt())
+            headerSmallManeuverIconColor(0xffFFFFFF.toInt())
+            headerGuidanceRecommendedLaneColor(0xffFFFFFF.toInt())
+            headerInstructionsTypefacePath("/system/fonts/NotoSerif-BoldItalic.ttf")
+            headerInstructionsTextColor(0xffFFFFFF.toInt())
+            headerInstructionsFirstRowTextSize(24f)
+            headerInstructionsSecondRowTextSize(20f)
+            headerDistanceTypefacePath("/system/fonts/NotoSerif-Italic.ttf")
+            headerDistanceValueTextColor(0xffFFFFFF.toInt())
+            headerDistanceValueTextSize(20f)
+            headerDistanceUnitsTextColor(0xffD2E3FC.toInt())
+            headerDistanceUnitsTextSize(18f)
+            headerNextStepTypefacePath("/system/fonts/NotoSerif-BoldItalic.ttf")
+            headerNextStepTextColor(0xffD2E3FC.toInt())
+            headerNextStepTextSize(20f)
+        }
+        navView.setStylingOptions(myStyle)
+        */
+
+        // --- SHOW DIRECTION'S LIST + CUSTOM CONTROLS ---
+        val listContainer = findViewById(R.id.directions_list_container) as FrameLayout
+        val closeButton = findViewById(R.id.close_directions_button) as Button
+        val customControlView = layoutInflater.inflate(R.layout.custom_control, null)
+
+        // Find the buttons inside the custom view
+        // Note: Make sure custom_control.xml has these IDs
+        val showListButton = customControlView.findViewById<Button>(R.id.btn_show_list)
+        val overviewButton = customControlView.findViewById<Button>(R.id.btn_overview)
+
+        // Setup Directions List
+        mDirectionsListView = DirectionsListView(this)
+        listContainer.addView(mDirectionsListView, 0)
+
+        // Initialize List Lifecycle
+        mDirectionsListView?.onCreate(Bundle())
+        mDirectionsListView?.onStart()
+        mDirectionsListView?.onResume()
+
+        // ADD CUSTOM CONTROL
+        navView.setCustomControl(
+            customControlView,
+            CustomControlPosition.BOTTOM_START_BELOW
+        )
+
+        // CLICK LISTENERS
+        showListButton.setOnClickListener {
+            listContainer.visibility = View.VISIBLE
+        }
+
+        // This button might be null if you are using the single-button XML.
+        // We use safe call ?. just in case.
+        overviewButton?.setOnClickListener {
+            navView.showRouteOverview()
+        }
+
+        closeButton.setOnClickListener {
+            listContainer.visibility = View.GONE
+        }
+
+        listContainer.visibility = View.GONE
+
+        // --- Visual Elements ---
+        navView.setTripProgressBarEnabled(true)
+        navView.setSpeedometerEnabled(true)
+        navView.setSpeedLimitIconEnabled(true)
+
+        // --- Map Layer (Traffic & Markers) ---
+        navView.getMapAsync { googleMap ->
+            googleMap.isTrafficEnabled = true
+            googleMap.clear()
+
+            // NOTE: We moved followMyLocation() to onNavigatorReady to prevent crashes.
+
+            // --- Add Markers ---
+            val standardMarkerLoc = LatLng(-37.67, 144.85)
+            googleMap.addMarker(
+                com.google.android.gms.maps.model.MarkerOptions()
+                    .position(standardMarkerLoc)
+                    .title("Standard Marker")
+            )
+
+            val customMarkerLoc = LatLng(-37.672, 144.855)
+            val blueIcon = com.google.android.gms.maps.model.BitmapDescriptorFactory
+                .defaultMarker(com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_AZURE)
+
+            val myCustomMarker = googleMap.addMarker(
+                com.google.android.gms.maps.model.MarkerOptions()
+                    .position(customMarkerLoc)
+                    .title("Floating Text Here!")
+                    .snippet("This is a custom blue pin")
+                    .icon(blueIcon)
+                    .draggable(true)
+            )
+            myCustomMarker?.showInfoWindow()
+        }
+
+        // --- Display Options (Global) ---
+        mDisplayOptions = DisplayOptions()
+            .hideDestinationMarkers(false)
+    }
+
     private fun checkPermissionGranted(permissionToCheck: String): Boolean =
-        ContextCompat.checkSelfPermission(
-            this,
-            permissionToCheck
-        ) == PackageManager.PERMISSION_GRANTED
+        ContextCompat.checkSelfPermission(this, permissionToCheck) == PackageManager.PERMISSION_GRANTED
 
     private fun onLocationPermissionGranted() {
         initializeNavigationApi()
@@ -110,183 +222,57 @@ class MainActivity : AppCompatActivity() {
             object : NavigationApi.NavigatorListener {
                 @SuppressLint("MissingPermission")
                 override fun onNavigatorReady(navigator: Navigator) {
+
+                    // 1. Setup Manager and References
+                    mNavigator = navigator
                     navigationManager = NavigationManager(this@MainActivity, navigator)
 
+                    // 2. Essential Configuration
                     navigator.setTaskRemovedBehavior(Navigator.TaskRemovedBehavior.QUIT_SERVICE)
                     navigator.simulator.setUserLocation(startLocation)
 
+                    // 3. Setup Camera (CRITICAL FIX: Call this here, not in setup UI)
                     navView.getMapAsync { googleMap ->
                         googleMap.followMyLocation(GoogleMap.CameraPerspective.TILTED)
                     }
 
-                    navigateToPlace()
+                    // 4. Define Routing Options
+                    val routingOptions = RoutingOptions()
+                        .travelMode(RoutingOptions.TravelMode.DRIVING)
+                        .alternateRoutesStrategy(AlternateRoutesStrategy.SHOW_NONE)
+
+                    // 5. Start Navigation via Manager
+                    // We use the Waypoint helper from the manager or build it here.
+                    // For the demo, let's build it here safely.
+                    try {
+                        val destination = Waypoint.builder()
+                            .setPlaceIdString(DESTINATION_PLACEID)
+                            .build()
+
+                        navigationManager?.startSingleDestinationNavigation(
+                            destination,
+                            routingOptions,
+                            mDisplayOptions
+                        )
+                    } catch (e: Waypoint.UnsupportedPlaceIdException) {
+                        showToast("Place ID was unsupported.")
+                    }
                 }
 
                 override fun onError(@NavigationApi.ErrorCode errorCode: Int) {
                     when (errorCode) {
                         NavigationApi.ErrorCode.NOT_AUTHORIZED -> {
-                            showToast(
-                                "Error : Your API key is " +
-                                        "invalid or not authorized to use Navigation."
-                            )
+                            showToast("Error: Your API key is invalid or not authorized.")
                         }
-
                         NavigationApi.ErrorCode.TERMS_NOT_ACCEPTED -> {
-                            showToast(
-                                "Error: User did not " +
-                                        "accept the Navigation Terms of Use."
-                            )
+                            showToast("Error: User did not accept Terms of Use.")
                         }
-
-                        else -> showToast("Error loading the Navigation SDK: $errorCode")
+                        else -> showToast("Error loading Navigation API: $errorCode")
                     }
                 }
             },
         )
     }
-
-    private fun navigateToPlace() {
-        /**
-         * @param routingStrategy The strategy to use (e.g. SHORTER or DEFAULT_BEST).
-         * @param avoidFerries True to avoid routes with ferries, false to include them.
-         * @param travelMode The mode of transportation for the route (e.g TravelMode.DRIVING or WALKING)
-         */
-
-        // 1. Define common options (required for all scenarios)
-        val routingOptions = RoutingOptions()
-            .travelMode(RoutingOptions.TravelMode.DRIVING)
-            .routingStrategy(RoutingOptions.RoutingStrategy.SHORTER)
-            .avoidFerries(true)
-
-        // 2. Define CustomRoutesOptions (used only for planned route)
-        val customRoutesOptions: CustomRoutesOptions = CustomRoutesOptions.builder()
-            .setRouteToken(routeToken)
-            .setTravelMode(CustomRoutesOptions.TravelMode.DRIVING)
-            .build()
-
-        // 3. Define a simple DisplayOptions
-        val displayOptions =
-            DisplayOptions().showTrafficLights(true).showStopSigns(true)
-
-
-        // 4. Choose ONE scenario
-        // Note: Uncomment ONLY one of the function calls below to demonstrate that specific scenario.
-
-        /** ---------- Navigate to a single-destination route  ----------- **/
-
-        fun startSingleDestinationNavigation(
-            destination: LatLng, // LatLng or String
-            routingOptions: RoutingOptions,
-            displayOptions: DisplayOptions
-        ) {
-
-            /**
-             * HERE you can set a LatLng value with
-             * .setLatLng(DESTINATION_LATLNG.latitude, DESTINATION_LATLNG.longitude)
-             * instead of
-             * .setPlaceIdString(DESTINATION_PLACEID)
-             * and change the parameter destination: String for
-             * destination: LatLng
-             **/
-
-            val destination: Waypoint = try {
-               // In case you want to use LatLng values
-                val lat = DESTINATION_LATLNG.latitude
-                val lng = DESTINATION_LATLNG.longitude
-
-                Waypoint.builder()
-                    .setLatLng(lat, lng) // setLatLng or setPlaceId
-                    //    .setPreferSameSideOfRoad(true)
-                    //    .setPreferredHeading(230)
-                    //    .setVehicleStopover(true)
-                    .setPreferSameSideOfRoad(true)
-                    .build()
-            } catch (e: UnsupportedPlaceIdException) {
-                showToast("Error: Place ID was unsupported.")
-                return
-            }
-            navigationManager?.startSingleDestinationNavigation(
-                destination,
-                routingOptions,
-                displayOptions
-            )
-        }
-
-        startSingleDestinationNavigation(DESTINATION_LATLNG, routingOptions, displayOptions)
-
-
-        /** ---------- Navigate to multiple waypoints ----------- **/
-
-        fun startMultiWaypointNavigation(
-            mWaypoints: MutableList<Waypoint>,
-            routingOptions: RoutingOptions,
-            displayOptions: DisplayOptions,
-        ) {
-            mWaypoints.clear()
-            navigationManager?.createWaypoint(
-                mWaypoints,
-                "ChIJw2Q7CVSvEmsR3sf73C6Qtw0",
-                "Sydney Star"
-            )
-            navigationManager?.createWaypoint(
-                mWaypoints,
-                "ChIJ3S-JXmauEmsRUcIaWtf4MzE",
-                "Sydney Opera House"
-            )
-            navigationManager?.createWaypoint(
-                mWaypoints,
-                "ChIJ_Zm6E2muEmsRHnEV3HnFoy8",
-                "Sydney Conservatorium"
-            )
-            if (mWaypoints.isNotEmpty()) {
-                navigationManager?.startMultiWaypointNavigation(
-                    mWaypoints,
-                    routingOptions,
-                    displayOptions
-                )
-            } else {
-                navigationManager?.showToast("No destinations added")
-            }
-        }
-
-      //  startMultiWaypointNavigation(mWaypoints, routingOptions, displayOptions)
-
-
-        /** ---------- Navigate to a planned Route with a TOKEN  ----------- **/
-
-        fun startTokenNavigation(
-            mWaypoints: MutableList<Waypoint>,
-            customRoutesOptions: CustomRoutesOptions,
-            displayOptions: DisplayOptions
-        ) {
-            mWaypoints.clear() // Always start fresh
-
-            // NOTE: When using a route token, the waypoint list must match the one used
-            // to generate the token.
-
-            val finalDestination: Waypoint = try {
-                Waypoint.builder().setPlaceIdString(DESTINATION_PLACEID).build()
-            } catch (e: UnsupportedPlaceIdException) {
-                showToast("Place ID was unsupported.")
-                return
-            }
-            mWaypoints.add(finalDestination)
-
-            if (mWaypoints.isNotEmpty()) {
-                navigationManager?.startTokenNavigation(
-                    mWaypoints,
-                    customRoutesOptions,
-                    displayOptions
-                )
-            } else {
-                navigationManager?.showToast("Final destination required for token route")
-            }
-        }
-
-      //  startTokenNavigation(mWaypoints, customRoutesOptions, displayOptions)
-
-    }
-
 
     override fun onSaveInstanceState(savedInstanceState: Bundle) {
         super.onSaveInstanceState(savedInstanceState)
@@ -324,14 +310,29 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
+        // 1. Clean up UI elements
         navView.onDestroy()
+        mDirectionsListView?.onPause()
+        mDirectionsListView?.onStop()
+        mDirectionsListView?.onDestroy()
+
+        // 2. Clean up Logic via Manager
         navigationManager?.cleanup()
+
+        // 3. Final SDK Teardown
+        mNavigator?.cleanup()
+        mNavigator = null
+
+        super.onDestroy()
     }
 
     private fun showToast(message: String) {
         Toast.makeText(this@MainActivity, message, Toast.LENGTH_LONG).show()
     }
 
+    companion object {
+        val DESTINATION_LATLNG = LatLng(-37.667971, 144.849707)
+        val DESTINATION_PLACEID = "ChIJGT5P9L1Z1moReHsUe9EXdxY"
+        val startLocation = LatLng(-37.682047873742235, 144.87428263292492)
+    }
 }
-
