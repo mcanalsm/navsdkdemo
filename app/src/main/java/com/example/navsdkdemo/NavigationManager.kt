@@ -106,7 +106,7 @@ class NavigationManager(
         pendingRoute.setOnResultListener { code ->
             when (code) {
                 Navigator.RouteStatus.OK -> {
-                    navigator.setAudioGuidance(Navigator.AudioGuidance.VOICE_ALERTS_AND_GUIDANCE)
+                    navigator.setAudioGuidance(Navigator.AudioGuidance.SILENT)
                     navigator.simulator.simulateLocationsAlongExistingRoute(
                         SimulationOptions().speedMultiplier(1f)
                     )

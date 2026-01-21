@@ -130,82 +130,82 @@ class MainActivity : AppCompatActivity() {
 */
 
         // --- SHOW DIRECTION'S LIST + CUSTOM CONTROLS ---
-        val listContainer = findViewById(R.id.directions_list_container) as FrameLayout
-        val closeButton = findViewById(R.id.close_directions_button) as Button
-        val customControlView = layoutInflater.inflate(R.layout.custom_control, null)
+        //  val listContainer = findViewById(R.id.directions_list_container) as FrameLayout
+        //  val closeButton = findViewById(R.id.close_directions_button) as Button
+        //  val customControlView = layoutInflater.inflate(R.layout.custom_control, null)
 
         // Find the buttons inside the custom view
         // Note: Make sure custom_control.xml has these IDs
 
-        val showListButton = customControlView.findViewById<Button>(R.id.btn_show_list)
-        val overviewButton = customControlView.findViewById<Button>(R.id.btn_overview)
+        //val showListButton = customControlView.findViewById<Button>(R.id.btn_show_list)
+        // val overviewButton = customControlView.findViewById<Button>(R.id.btn_overview)
 
         // Setup Directions List
-        mDirectionsListView = DirectionsListView(this)
-        listContainer.addView(mDirectionsListView, 0)
+        // mDirectionsListView = DirectionsListView(this)
+        // listContainer.addView(mDirectionsListView, 0)
 
         // Initialize List Lifecycle
-        mDirectionsListView?.onCreate(Bundle())
-        mDirectionsListView?.onStart()
-        mDirectionsListView?.onResume()
+        //  mDirectionsListView?.onCreate(Bundle())
+        // mDirectionsListView?.onStart()
+        // mDirectionsListView?.onResume()
 
         // ADD CUSTOM CONTROL
 
-        navView.setCustomControl(
-            customControlView,
-            CustomControlPosition.BOTTOM_START_BELOW
-        )
+        //  navView.setCustomControl(
+        //     customControlView,
+        //     CustomControlPosition.BOTTOM_START_BELOW
+        // )
 
         // CLICK LISTENERS
-        showListButton.setOnClickListener {
-            listContainer.visibility = View.GONE
-        }
+        // showListButton.setOnClickListener {
+        //    listContainer.visibility = View.GONE
+        //}
 
         // This button might be null if you are using the single-button XML.
         // We use safe call ?. just in case.
-        overviewButton?.setOnClickListener {
-            navView.showRouteOverview()
-        }
+        //  overviewButton?.setOnClickListener {
+        //    navView.showRouteOverview()
+        // }
 
-        closeButton.setOnClickListener {
-            listContainer.visibility = View.GONE
-        }
+        //   closeButton.setOnClickListener {
+        //       listContainer.visibility = View.GONE
+        //   }
 
-        listContainer.visibility = View.GONE
+        //  listContainer.visibility = View.GONE
 
         // --- Visual Elements ---
-        navView.setTripProgressBarEnabled(true)
-        navView.setSpeedometerEnabled(true)
-        navView.setSpeedLimitIconEnabled(true)
+        navView.setTripProgressBarEnabled(false)
+        navView.setSpeedometerEnabled(false)
+        navView.setSpeedLimitIconEnabled(false)
 
         // --- Map Layer (Traffic & Markers) ---
         navView.getMapAsync { googleMap ->
-            googleMap.isTrafficEnabled = true
+            googleMap.isTrafficEnabled = false
+            googleMap.setBuildingsEnabled(false)
             googleMap.clear()
 
-            // NOTE: We moved followMyLocation() to onNavigatorReady to prevent crashes.
 
             // --- Add Markers ---
-            val standardMarkerLoc = LatLng(-37.67, 144.85)
-            googleMap.addMarker(
-                com.google.android.gms.maps.model.MarkerOptions()
-                    .position(standardMarkerLoc)
-                    .title("Standard Marker")
-            )
+            //  val standardMarkerLoc = LatLng(-37.67, 144.85)
+            //  googleMap.addMarker(
+            //    com.google.android.gms.maps.model.MarkerOptions()
+            //         .position(standardMarkerLoc)
+            //         .title("Standard Marker")
+            // )
 
-            val customMarkerLoc = LatLng(-37.672, 144.855)
-            val blueIcon = com.google.android.gms.maps.model.BitmapDescriptorFactory
-                .defaultMarker(com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_AZURE)
-
-            val myCustomMarker = googleMap.addMarker(
-                com.google.android.gms.maps.model.MarkerOptions()
-                    .position(customMarkerLoc)
-                    .title("Floating Text Here!")
-                    .snippet("This is a custom blue pin")
-                    .icon(blueIcon)
-                    .draggable(true)
-            )
-            myCustomMarker?.showInfoWindow()
+            // val customMarkerLoc = LatLng(-37.672, 144.855)
+                //  val blueIcon = com.google.android.gms.maps.model.BitmapDescriptorFactory
+            //     .defaultMarker(com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_AZURE)
+//
+            //  val myCustomMarker = googleMap.addMarker(
+                //  com.google.android.gms.maps.model.MarkerOptions()
+                //       .position(customMarkerLoc)
+                //     .title("Floating Text Here!")
+                //   .snippet("This is a custom blue pin")
+                //    .icon(blueIcon)
+            //   .draggable(true)
+            // )
+            //  myCustomMarker?.showInfoWindow()
         }
 
         // --- Display Options (Global) ---
@@ -247,10 +247,11 @@ class MainActivity : AppCompatActivity() {
                         .alternateRoutesStrategy(AlternateRoutesStrategy.SHOW_NONE)
 
                     // 5. Start Navigation via Manager
-                    // We use the Waypoint helper from the manager or build it here.
-                    // For the demo, let's build it here safely.
+
                     try {
-                        val destination = Waypoint.builder().setPlaceIdString(DESTINATION_PLACEID).build()
+                        val destination = Waypoint.builder()
+                            .setVehicleStopover(false)
+                            .setLatLng(DESTINATION_LATLNG.latitude, DESTINATION_LATLNG.longitude).build()
 
                         navigationManager?.startSingleDestinationNavigation(
                             destination,
@@ -315,9 +316,9 @@ class MainActivity : AppCompatActivity() {
     override fun onDestroy() {
         // 1. Clean up UI elements
         navView.onDestroy()
-        mDirectionsListView?.onPause()
-        mDirectionsListView?.onStop()
-        mDirectionsListView?.onDestroy()
+        //mDirectionsListView?.onPause()
+        //  mDirectionsListView?.onStop()
+        //  mDirectionsListView?.onDestroy()
 
         // 2. Clean up Logic via Manager
         navigationManager?.cleanup()
@@ -334,8 +335,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
-        val DESTINATION_LATLNG = LatLng(-37.667971, 144.849707)
-        val DESTINATION_PLACEID = "ChIJGT5P9L1Z1moReHsUe9EXdxY"
-        val startLocation = LatLng( -37.726148, 144.886216)
+        val DESTINATION_LATLNG = LatLng(41.38414327814334, 2.190358590615066)
+     //   val DESTINATION_PLACEID = "ChIJGT5P9L1Z1moReHsUe9EXdxY"
+        val startLocation = LatLng( 41.386854968143105, 2.1944462640095406)
     }
 }
