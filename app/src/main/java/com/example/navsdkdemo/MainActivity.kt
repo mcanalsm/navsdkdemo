@@ -25,6 +25,7 @@ import com.google.android.libraries.navigation.CustomControlPosition
 import com.google.android.libraries.navigation.DirectionsListView
 import com.google.android.libraries.navigation.DisplayOptions
 import com.google.android.libraries.navigation.ForceNightMode.FORCE_DAY
+import com.google.android.libraries.navigation.ForceNightMode.FORCE_NIGHT
 import com.google.android.libraries.navigation.NavigationApi
 import com.google.android.libraries.navigation.NavigationView
 import com.google.android.libraries.navigation.Navigator
@@ -99,10 +100,11 @@ class MainActivity : AppCompatActivity() {
     private fun setupNavigationUiSettings() {
 
         // --- Night Mode Settings ---
+        // Change between AUTO, FORCE_DAY or FORCE_NIGHT
         navView.setForceNightMode(FORCE_DAY)
 
         // --- Styling (Commented out for Playground usage) ---
-        /*
+/*
         val myStyle = StylingOptions().apply {
             primaryDayModeThemeColor(0xff1A73E8.toInt())
             secondaryDayModeThemeColor(0xff1557B0.toInt())
@@ -125,7 +127,7 @@ class MainActivity : AppCompatActivity() {
             headerNextStepTextSize(20f)
         }
         navView.setStylingOptions(myStyle)
-        */
+*/
 
         // --- SHOW DIRECTION'S LIST + CUSTOM CONTROLS ---
         val listContainer = findViewById(R.id.directions_list_container) as FrameLayout
@@ -134,6 +136,7 @@ class MainActivity : AppCompatActivity() {
 
         // Find the buttons inside the custom view
         // Note: Make sure custom_control.xml has these IDs
+
         val showListButton = customControlView.findViewById<Button>(R.id.btn_show_list)
         val overviewButton = customControlView.findViewById<Button>(R.id.btn_overview)
 
@@ -147,6 +150,7 @@ class MainActivity : AppCompatActivity() {
         mDirectionsListView?.onResume()
 
         // ADD CUSTOM CONTROL
+
         navView.setCustomControl(
             customControlView,
             CustomControlPosition.BOTTOM_START_BELOW
@@ -154,7 +158,7 @@ class MainActivity : AppCompatActivity() {
 
         // CLICK LISTENERS
         showListButton.setOnClickListener {
-            listContainer.visibility = View.VISIBLE
+            listContainer.visibility = View.GONE
         }
 
         // This button might be null if you are using the single-button XML.
@@ -232,6 +236,7 @@ class MainActivity : AppCompatActivity() {
                     navigator.simulator.setUserLocation(startLocation)
 
                     // 3. Setup Camera (CRITICAL FIX: Call this here, not in setup UI)
+                    // Set the camera: TOP_DOWN_HEADING_UP, TOP_DOWN_NORTH_UP, TILTED
                     navView.getMapAsync { googleMap ->
                         googleMap.followMyLocation(GoogleMap.CameraPerspective.TILTED)
                     }
@@ -245,9 +250,7 @@ class MainActivity : AppCompatActivity() {
                     // We use the Waypoint helper from the manager or build it here.
                     // For the demo, let's build it here safely.
                     try {
-                        val destination = Waypoint.builder()
-                            .setPlaceIdString(DESTINATION_PLACEID)
-                            .build()
+                        val destination = Waypoint.builder().setPlaceIdString(DESTINATION_PLACEID).build()
 
                         navigationManager?.startSingleDestinationNavigation(
                             destination,
@@ -333,6 +336,6 @@ class MainActivity : AppCompatActivity() {
     companion object {
         val DESTINATION_LATLNG = LatLng(-37.667971, 144.849707)
         val DESTINATION_PLACEID = "ChIJGT5P9L1Z1moReHsUe9EXdxY"
-        val startLocation = LatLng(-37.682047873742235, 144.87428263292492)
+        val startLocation = LatLng( -37.726148, 144.886216)
     }
 }
