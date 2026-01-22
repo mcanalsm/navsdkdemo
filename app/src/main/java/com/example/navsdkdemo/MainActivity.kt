@@ -247,11 +247,10 @@ class MainActivity : AppCompatActivity() {
                         .alternateRoutesStrategy(AlternateRoutesStrategy.SHOW_NONE)
 
                     // 5. Start Navigation via Manager
-
+                    // We use the Waypoint helper from the manager or build it here.
+                    // For the demo, let's build it here safely.
                     try {
-                        val destination = Waypoint.builder()
-                            .setVehicleStopover(false)
-                            .setLatLng(DESTINATION_LATLNG.latitude, DESTINATION_LATLNG.longitude).build()
+                        val destination = Waypoint.builder().setLatLng(DESTINATION_LATLNG.latitude, DESTINATION_LATLNG.longitude).build()
 
                         navigationManager?.startSingleDestinationNavigation(
                             destination,
@@ -335,8 +334,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
-        val DESTINATION_LATLNG = LatLng(41.38414327814334, 2.190358590615066)
+        val DESTINATION_LATLNG = LatLng(41.3841, 2.1903)
      //   val DESTINATION_PLACEID = "ChIJGT5P9L1Z1moReHsUe9EXdxY"
-        val startLocation = LatLng( 41.386854968143105, 2.1944462640095406)
+        val startLocation = LatLng( 41.3871, 2.1948)
     }
 }

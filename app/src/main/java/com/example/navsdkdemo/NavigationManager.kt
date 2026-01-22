@@ -6,7 +6,10 @@ import android.widget.Toast
 import com.google.android.libraries.navigation.CustomRoutesOptions
 import com.google.android.libraries.navigation.DisplayOptions
 import com.google.android.libraries.navigation.ListenableResultFuture
+import com.google.android.libraries.navigation.NavigationApi
+import com.google.android.libraries.navigation.NavigationView
 import com.google.android.libraries.navigation.Navigator
+import com.google.android.libraries.navigation.RoadSnappedLocationProvider
 import com.google.android.libraries.navigation.RoutingOptions
 import com.google.android.libraries.navigation.SimulationOptions
 import com.google.android.libraries.navigation.Waypoint
@@ -32,9 +35,18 @@ class NavigationManager(
         }
     }
 
-    private val routeChangedListener = Navigator.RouteChangedListener {
-        showToast("onRouteChanged: The driver's route changed")
-    }
+//    private val routeChangedListener = Navigator.RouteChangedListener {
+//        showToast("onRouteChanged: The driver's route changed")
+//    }
+//
+//    private val locationListener = RoadSnappedLocationProvider.LocationListener { location ->
+//        Log.d("NavManager", "Location: ${location.latitude}, ${location.longitude}")
+//    }
+//
+//    private val remainingTimeOrDistanceChangedListener = Navigator.RemainingTimeOrDistanceChangedListener {
+//        showToast("onRemainingTimeOrDistanceChanged: Time or distance estimate has changed")
+//    }
+
 
     init {
         registerListeners()
@@ -42,7 +54,13 @@ class NavigationManager(
 
     private fun registerListeners() {
         navigator.addArrivalListener(arrivalListener)
-        navigator.addRouteChangedListener(routeChangedListener)
+       // navigator.addRouteChangedListener(routeChangedListener)
+       // navigator.addRemainingTimeOrDistanceChangedListener(60, 100, remainingTimeOrDistanceChangedListener)
+
+       // val app = context.applicationContext as android.app.Application
+       // val roadSnappedLocationProvider = NavigationApi.getRoadSnappedLocationProvider(app)
+       // roadSnappedLocationProvider?.addLocationListener(locationListener)
+
     }
 
     // --- Navigation Scenario Methods ---
@@ -66,6 +84,7 @@ class NavigationManager(
     /**
      * Scenario 2: Starts navigation through multiple waypoints.
      */
+
     fun startMultiWaypointNavigation(
         destinations: List<Waypoint>,
         routingOptions: RoutingOptions? = null,
@@ -120,10 +139,7 @@ class NavigationManager(
         }
     }
 
-    /**
-     * HELPER: Creates a Waypoint safely and adds it to the list.
-     * Handles the UnsupportedPlaceIdException so the Activity doesn't have to.
-     */
+
     fun createWaypoint(listToAddTo: MutableList<Waypoint>, placeId: String, title: String?) {
         try {
             val wp = Waypoint.builder()
@@ -146,7 +162,9 @@ class NavigationManager(
         navigator.stopGuidance()
         navigator.clearDestinations()
         navigator.removeArrivalListener(arrivalListener)
-        navigator.removeRouteChangedListener(routeChangedListener)
+//      navigator.removeRouteChangedListener(routeChangedListener)
+//        navigator.removeRemainingTimeOrDistanceChangedListener(progressListener)
+//        roadProvider?.removeLocationListener(locationListener)
         navigator.simulator.unsetUserLocation()
     }
 
