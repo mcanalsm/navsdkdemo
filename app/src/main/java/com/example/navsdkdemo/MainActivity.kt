@@ -178,6 +178,7 @@ class MainActivity : AppCompatActivity() {
         navView.setTripProgressBarEnabled(true)
         navView.setSpeedometerEnabled(true)
         navView.setSpeedLimitIconEnabled(true)
+        navView.setTrafficPromptsEnabled(true)
 
         // --- Map Layer (Traffic & Markers) ---
         navView.getMapAsync { googleMap ->
@@ -253,7 +254,7 @@ class MainActivity : AppCompatActivity() {
                     // For the demo, let's build it here safely.
 
                     try {
-                        val destination = Waypoint.builder().setPlaceIdString(DESTINATION_PLACEID).build()
+                        val destination = Waypoint.builder().setLatLng(DESTINATION_LATLNG.latitude, DESTINATION_LATLNG.longitude).build()
 
                         navigationManager?.startSingleDestinationNavigation(
                             destination,
@@ -337,8 +338,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
-        val DESTINATION_LATLNG = LatLng(-37.667971, 144.849707)
+        val DESTINATION_LATLNG = LatLng(54.16627469044764, 19.402047071553078)
         val DESTINATION_PLACEID = "ChIJGT5P9L1Z1moReHsUe9EXdxY"
-        val startLocation = LatLng( -37.726148, 144.886216)
+        val startLocation = LatLng(54.13680659932394, 19.416246833803015)
     }
 }
