@@ -1,4 +1,7 @@
-val navSdkVersion by extra("7.2.0")
+
+val navSdkVersion by extra("7.4.0")
+
+
 
 plugins {
     alias(libs.plugins.android.application)
@@ -34,8 +37,10 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
         isCoreLibraryDesugaringEnabled = true
     }
-    kotlinOptions {
-        jvmTarget = "1.8"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
     }
 }
 

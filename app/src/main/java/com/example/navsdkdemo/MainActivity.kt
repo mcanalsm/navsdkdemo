@@ -34,6 +34,7 @@ import com.google.android.libraries.navigation.StylingOptions
 import com.google.android.libraries.navigation.Waypoint
 import java.util.concurrent.TimeUnit
 
+
 class MainActivity : AppCompatActivity() {
 
     private var mNavigator: Navigator? = null
@@ -158,7 +159,7 @@ class MainActivity : AppCompatActivity() {
 
         // CLICK LISTENERS
         showListButton.setOnClickListener {
-            listContainer.visibility = View.GONE
+            listContainer.visibility = View.VISIBLE
         }
 
         // This button might be null if you are using the single-button XML.
@@ -246,9 +247,11 @@ class MainActivity : AppCompatActivity() {
                         .travelMode(RoutingOptions.TravelMode.DRIVING)
                         .alternateRoutesStrategy(AlternateRoutesStrategy.SHOW_NONE)
 
+
                     // 5. Start Navigation via Manager
                     // We use the Waypoint helper from the manager or build it here.
                     // For the demo, let's build it here safely.
+
                     try {
                         val destination = Waypoint.builder().setPlaceIdString(DESTINATION_PLACEID).build()
 
