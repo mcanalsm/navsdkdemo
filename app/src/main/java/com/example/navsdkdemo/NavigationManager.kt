@@ -3,6 +3,7 @@ package com.example.navsdkdemo
 import android.content.Context
 import android.util.Log
 import android.widget.Toast
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.navigation.CustomRoutesOptions
 import com.google.android.libraries.navigation.DisplayOptions
 import com.google.android.libraries.navigation.ListenableResultFuture
@@ -99,6 +100,62 @@ class NavigationManager(
         )
         handlePendingRouteResult(pendingRoute)
     }
+
+    /**
+     * Scenario 4: Enhanced Navigation using Navigation Point Token.
+     */
+    fun startNavigationPointToken(
+        navPointToken:String,
+        routingOptions: RoutingOptions? = null,
+        displayOptions: DisplayOptions? = null
+    ) {
+        try {
+            val waypoint = Waypoint.builder()
+                .setNavigationPointToken(navPointToken) // For destination highlighting/context
+                .build()
+
+            val pendingRoute = navigator.setDestination(
+                waypoint,
+                routingOptions,
+                displayOptions
+            )
+            handlePendingRouteResult(pendingRoute)
+
+        } catch (e: UnsupportedPlaceIdException) {
+            Log.e("NavManager", "Enhanced Waypoint Error", e)
+            showToast("Error: Enhanced Waypoint failed.")
+        }
+    }
+
+    /**
+     * Scenario 5: Enhanced Navigation using Place ID + LatLng.
+     */
+    fun startNavigationWithPlaceIdAndLatLng
+                (
+        placeId: String,
+        latLng: LatLng,
+        routingOptions: RoutingOptions? = null,
+        displayOptions: DisplayOptions? = null
+    ) {
+        try {
+            val waypoint = Waypoint.builder()
+                .setPlaceIdString(placeId)
+                .setLatLng(latLng.latitude, latLng.longitude)
+                .build()
+
+            val pendingRoute = navigator.setDestination(
+                waypoint,
+                routingOptions,
+                displayOptions
+            )
+            handlePendingRouteResult(pendingRoute)
+
+        } catch (e: UnsupportedPlaceIdException) {
+            Log.e("NavManager", "Enhanced Waypoint Error", e)
+            showToast("Error: Enhanced Waypoint failed.")
+        }
+    }
+
 
     // --- Utility Functions ---
 

@@ -179,10 +179,13 @@ class MainActivity : AppCompatActivity() {
         navView.setSpeedometerEnabled(true)
         navView.setSpeedLimitIconEnabled(true)
         navView.setTrafficPromptsEnabled(true)
+        navView.setTrafficIncidentCardsEnabled(true);
+
 
         // --- Map Layer (Traffic & Markers) ---
         navView.getMapAsync { googleMap ->
             googleMap.isTrafficEnabled = true
+            googleMap.setBuildingsEnabled(false)
             googleMap.clear()
 
             // NOTE: We moved followMyLocation() to onNavigatorReady to prevent crashes.
@@ -212,7 +215,8 @@ class MainActivity : AppCompatActivity() {
 
         // --- Display Options (Global) ---
         mDisplayOptions = DisplayOptions()
-            .hideDestinationMarkers(false)
+            .hideDestinationMarkers(true)
+
     }
 
     private fun checkPermissionGranted(permissionToCheck: String): Boolean =
@@ -254,12 +258,12 @@ class MainActivity : AppCompatActivity() {
                     // For the demo, let's build it here safely.
 
                     try {
-                        val destination = Waypoint.builder().setLatLng(DESTINATION_LATLNG.latitude, DESTINATION_LATLNG.longitude).build()
 
-                        navigationManager?.startSingleDestinationNavigation(
-                            destination,
-                            routingOptions,
-                            mDisplayOptions
+                        navigationManager?.startNavigationWithPlaceIdAndLatLng(
+                            placeId = DESTINATION_PLACEID,
+                            latLng =  DESTINATION_LATLNG,
+                            routingOptions = routingOptions,
+                            displayOptions = mDisplayOptions
                         )
                     } catch (e: Waypoint.UnsupportedPlaceIdException) {
                         showToast("Place ID was unsupported.")
@@ -338,8 +342,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     companion object {
-        val DESTINATION_LATLNG = LatLng(54.16627469044764, 19.402047071553078)
-        val DESTINATION_PLACEID = "ChIJGT5P9L1Z1moReHsUe9EXdxY"
-        val startLocation = LatLng(54.13680659932394, 19.416246833803015)
-    }
+        val DESTINATION_LATLNG = LatLng( 40.748441,-73.985664 )
+        val DESTINATION_PLACEID = "ChIJaXQRs6lZwokRY6EFpJnhNNE"
+
+        // Start point in Manhattan
+        val startLocation = LatLng(40.74685395783713, -73.98991448921662)  }
 }
